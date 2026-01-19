@@ -209,42 +209,80 @@ def send_low_stock_alert(name, qty, threshold):
 @app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
 @login_required
 def edit_medicine(medicine_id):
-    Key={'medicine_id': medicine_id},
-    UpdateExpression="""
-        SET 
-            #name = :name,
-            #category = :category,
-            #quantity = :quantity,
-            #unit = :unit,
-            #threshold = :threshold,
-            #batch_number = :batch,
-            #expiration_date = :exp,
-            #unit_price = :price,
-            #manufacturer = :mfr,
-            #description = :desc,
-            #updated_at = :updated
-    """,
-    ExpressionAttributeNames={
-        '#name': 'name',
-        '#category': 'category',
-        '#quantity': 'quantity',
-        '#unit': 'unit',
-        '#threshold': 'threshold'
-    },
-    ExpressionAttributeValues={
-        ':name': request.form.get('name'),
-        ':category': request.form.get('category'),
-        ':quantity': new_quantity,
-        ':unit': request.form.get('unit'),
-        ':threshold': threshold,
-        ':batch': request.form.get('batch_number'),
-        ':exp': request.form.get('expiration_date'),
-        ':price': float_to_decimal(float(request.form.get('unit_price', 0))),
-        ':mfr': request.form.get('manufacturer'),
-        ':desc': request.form.get('description', ''),
-        ':updated': datetime.now().isoformat()
-    }
-)
+    if request.method == 'POST':
+        try:
+            old_quantity = int(request.form.get('old_quantity', 0))
+            new_quantity = int(request.form.get('quantity'))
+            threshold = int(request.form.get('threshold'))
+
+            medicines_table.update_item(
+                Key={'medicine_id': medicine_id},
+                UpdateExpression="""
+                    SET 
+                        #n = :n,
+                        #c = :c,
+                        #q = :q,
+                        #u = :u,
+                        #t = :t,
+                        #bn = :bn,
+                        #ed = :ed,
+                        #up = :up,
+                        #m = :m,
+                        #d = :d,
+                        #ua = :ua
+                """,
+                ExpressionAttributeNames={
+                    '#n': 'name',
+                    '#c': 'category',
+                    '#q': 'quantity',
+                    '#u': 'unit',
+                    '#t': 'threshold',
+                    '#bn': 'batch_number',
+                    '#ed': 'expiration_date',
+                    '#up': 'unit_price',
+                    '#m': 'manufacturer',
+                    '#d': 'description',
+                    '#ua': 'updated_at'
+                },
+                ExpressionAttributeValues={
+                    ':n': request.form.get('name'),
+                    ':c': request.form.get('category'),
+                    ':q': new_quantity,
+                    ':u': request.form.get('unit'),
+                    ':t': threshold,
+                    ':bn': request.form.get('batch_number'),
+                    ':ed': request.form.get('expiration_date'),
+                    ':up': float_to_decimal(float(request.form.get('unit_price', 0))),
+                    ':m': request.form.get('manufacturer'),
+                    ':d': request.form.get('description', ''),
+                    ':ua': datetime.now().isoformat()
+                }
+            )
+
+            # Low stock alert
+            if new_quantity <= threshold and old_quantity > threshold:
+                send_low_stock_alert(
+                    request.form.get('name'),
+                    new_quantity,
+                    threshold
+                )
+
+            flash('Medicine updated successfully!', 'success')
+            return redirect(url_for('medicines'))
+
+        except Exception as e:
+            flash(f'Error updating medicine: {str(e)}', 'danger')
+            return redirect(url_for('edit_medicine', medicine_id=medicine_id))
+
+    # GET request
+    response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+    medicine = response.get('Item')
+
+    if not medicine:
+        flash('Medicine not found!', 'danger')
+        return redirect(url_for('medicines'))
+
+    return render_template('edit_medicine.html', medicine=medicine)
 
 # Route: Delete Medicine
 @app.route('/medicines/delete/<medicine_id>', methods=['POST'])
@@ -403,6 +441,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
