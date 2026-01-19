@@ -206,19 +206,29 @@ def send_low_stock_alert(name, qty, threshold):
         Message=f'{name} is low on stock ({qty}/{threshold})'
     )
 # Route: Edit Medicine
+from decimal import Decimal
+
 @app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
 @login_required
 def edit_medicine(medicine_id):
     if request.method == 'POST':
         try:
-            old_quantity = int(request.form.get('old_quantity', 0))
+            # Fetch current item FIRST
+            response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+            medicine = response.get('Item')
+
+            if not medicine:
+                flash('Medicine not found!', 'danger')
+                return redirect(url_for('medicines'))
+
+            old_quantity = int(medicine.get('quantity', 0))
             new_quantity = int(request.form.get('quantity'))
             threshold = int(request.form.get('threshold'))
 
             medicines_table.update_item(
                 Key={'medicine_id': medicine_id},
                 UpdateExpression="""
-                    SET 
+                    SET
                         #n = :n,
                         #c = :c,
                         #q = :q,
@@ -247,17 +257,42 @@ def edit_medicine(medicine_id):
                 ExpressionAttributeValues={
                     ':n': request.form.get('name'),
                     ':c': request.form.get('category'),
-                    ':q': new_quantity,
+                    ':q': Decimal(str(new_quantity)),
                     ':u': request.form.get('unit'),
-                    ':t': threshold,
+                    ':t': Decimal(str(threshold)),
                     ':bn': request.form.get('batch_number'),
                     ':ed': request.form.get('expiration_date'),
-                    ':up': float_to_decimal(float(request.form.get('unit_price', 0))),
+                    ':up': Decimal(str(request.form.get('unit_price'))),
                     ':m': request.form.get('manufacturer'),
                     ':d': request.form.get('description', ''),
                     ':ua': datetime.now().isoformat()
                 }
             )
+
+            # Low stock alert
+            if new_quantity <= threshold and old_quantity > threshold:
+                send_low_stock_alert(
+                    request.form.get('name'),
+                    new_quantity,
+                    threshold
+                )
+
+            flash('Medicine updated successfully!', 'success')
+            return redirect(url_for('medicines'))
+
+        except Exception as e:
+            flash(f'Error updating medicine: {str(e)}', 'danger')
+            return redirect(url_for('edit_medicine', medicine_id=medicine_id))
+
+    # GET
+    response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+    medicine = response.get('Item')
+
+    if not medicine:
+        flash('Medicine not found!', 'danger')
+        return redirect(url_for('medicines'))
+
+    return render_template('edit_medicine.html', medicine=medicine)
 
             # Low stock alert
             if new_quantity <= threshold and old_quantity > threshold:
@@ -441,6 +476,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
