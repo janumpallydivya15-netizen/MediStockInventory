@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid main-content">
+    <div class="page-title">
+        <i class="bi bi-graph-up"></i>
+        Reports & Analytics
+    </div>
+
+    <!-- Category Statistics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="bi bi-pie-chart"></i> Category-wise Distribution
+        </div>
+        <div class="card-body">
+            {% if category_stats %}
+                <div class="row g-4">
+                    {% for category, stats in category_stats.items() %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <span class="badge bg-primary">{{ category }}</span>
+                                </h5>
+                                <div class="mt-3">
+                                    <p class="mb-2">
+                                        <strong>Total Items:</strong> 
+                                        <span class="float-end">{{ stats.count }}</span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Total Value:</strong> 
+                                        <span class="float-end text-success fw-bold">₹{{ "%.2f"|format(stats.total_value) }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted text-center py-4">No data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detailed Inventory Report -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-table"></i> Detailed Inventory Report</span>
+            <button onclick="exportTableToCSV('inventory_report.csv')" class="btn btn-sm btn-success">
+                <i class="bi bi-download"></i> Export CSV
+            </button>
+        </div>
+        <div class="card-body">
+            {% if medicines %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="reportTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Category</th>
+                                <th>Manufacturer</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Unit Price (₹)</th>
+                                <th>Total Value (₹)</th>
+                                <th>Batch No.</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for medicine in medicines %}
+                            {% set total_value = medicine.quantity * medicine.unit_price %}
+                            <tr>
+                                <td>{{ medicine.name }}</td>
+                                <td>{{ medicine.category }}</td>
+                                <td>{{ medicine.manufacturer }}</td>
+                                <td>{{ medicine.quantity }}</td>
+                                <td>{{ medicine.unit }}</td>
+                                <td>{{ "%.2f"|format(medicine.unit_price) }}</td>
+                                <td class="fw-bold text-success">{{ "%.2f"|format(total_value) }}</td>
+                                <td>{{ medicine.batch_number }}</td>
+                                <td>{{ medicine.expiration_date }}</td>
+                                <td>
+                                    {% if medicine.quantity <= medicine.threshold %}
+                                        <span class="badge bg-danger">Low Stock</span>
+                                    {% else %}
+                                        <span class="badge bg-success">In Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="6" class="text-end">Grand Total:</th>
+                                <th class="text-success">
+                                    ₹{{ "%.2f"|format(medicines|sum(attribute='quantity')|float * medicines|sum(attribute='unit_price')|float if medicines else 0) }}
+                                </th>
+                                <th colspan="3"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted text-center py-4">No medicines in inventory</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i> Inventory Summary
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Total Unique Medicines:</span>
+                            <strong>{{ medicines|length }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Total Categories:</span>
+                            <strong>{{ category_stats|length }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Low Stock Items:</span>
+                            <strong class="text-danger">
+                                {{ medicines|selectattr('quantity', 'le', medicines|map(attribute='threshold')|list)|list|length }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-currency-rupee"></i> Financial Summary
+                </div>
+                <div class="card-body">
+                    {% set total_inventory_value = medicines|sum(attribute='quantity')|float * medicines|sum(attribute='unit_price')|float if medicines else 0 %}
+                    <div class="text-center py-3">
+                        <h6 class="text-muted mb-2">Total Inventory Value</h6>
+                        <h2 class="text-success fw-bold mb-0">₹{{ "%.2f"|format(total_inventory_value) }}</h2>
+                    </div>
+                    <hr>
+                    <p class="text-muted text-center mb-0">
+                        <small>Based on current stock and unit prices</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function exportTableToCSV(filename) {
+        const table = document.getElementById('reportTable');
+        let csv = [];
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [];
+            const cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').trim();
+                data = data.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        const csvString = csv.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+{% endblock %}

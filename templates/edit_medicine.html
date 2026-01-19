@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid main-content">
+    <div class="page-title">
+        <i class="bi bi-pencil-square"></i>
+        Edit Medicine
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-clipboard-check"></i> Update Medicine Information
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_medicine', medicine_id=medicine.medicine_id) }}">
+                        <input type="hidden" name="old_quantity" value="{{ medicine.quantity }}">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label fw-semibold">
+                                    Medicine Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ medicine.name }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label fw-semibold">
+                                    Category <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="Tablet" {% if medicine.category == 'Tablet' %}selected{% endif %}>Tablet</option>
+                                    <option value="Capsule" {% if medicine.category == 'Capsule' %}selected{% endif %}>Capsule</option>
+                                    <option value="Syrup" {% if medicine.category == 'Syrup' %}selected{% endif %}>Syrup</option>
+                                    <option value="Injection" {% if medicine.category == 'Injection' %}selected{% endif %}>Injection</option>
+                                    <option value="Ointment" {% if medicine.category == 'Ointment' %}selected{% endif %}>Ointment</option>
+                                    <option value="Drop" {% if medicine.category == 'Drop' %}selected{% endif %}>Drop</option>
+                                    <option value="Inhaler" {% if medicine.category == 'Inhaler' %}selected{% endif %}>Inhaler</option>
+                                    <option value="Other" {% if medicine.category == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label fw-semibold">
+                                    Quantity <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" 
+                                       min="0" value="{{ medicine.quantity }}" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="unit" class="form-label fw-semibold">
+                                    Unit <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="unit" name="unit" required>
+                                    <option value="Pieces" {% if medicine.unit == 'Pieces' %}selected{% endif %}>Pieces</option>
+                                    <option value="Bottles" {% if medicine.unit == 'Bottles' %}selected{% endif %}>Bottles</option>
+                                    <option value="Boxes" {% if medicine.unit == 'Boxes' %}selected{% endif %}>Boxes</option>
+                                    <option value="Strips" {% if medicine.unit == 'Strips' %}selected{% endif %}>Strips</option>
+                                    <option value="ml" {% if medicine.unit == 'ml' %}selected{% endif %}>ml</option>
+                                    <option value="gm" {% if medicine.unit == 'gm' %}selected{% endif %}>gm</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="threshold" class="form-label fw-semibold">
+                                    Threshold <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="threshold" name="threshold" 
+                                       min="0" value="{{ medicine.threshold }}" required>
+                                <small class="text-muted">Alert when stock falls below this</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="batch_number" class="form-label fw-semibold">
+                                    Batch Number <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="batch_number" name="batch_number" 
+                                       value="{{ medicine.batch_number }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="expiration_date" class="form-label fw-semibold">
+                                    Expiration Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="expiration_date" name="expiration_date" 
+                                       value="{{ medicine.expiration_date }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="unit_price" class="form-label fw-semibold">
+                                    Unit Price (₹) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                       step="0.01" min="0" value="{{ medicine.unit_price }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="manufacturer" class="form-label fw-semibold">
+                                    Manufacturer <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="manufacturer" name="manufacturer" 
+                                       value="{{ medicine.manufacturer }}" required>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label fw-semibold">
+                                    Description
+                                </label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3">{{ medicine.description }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <strong>Note:</strong> If you reduce the quantity below the threshold, a low stock alert will be sent.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Update Medicine
+                            </button>
+                            <a href="{{ url_for('medicines') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Medicine Details Summary -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> Current Details
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Added By:</strong> {{ medicine.added_by }}</p>
+                            <p><strong>Created:</strong> {{ medicine.created_at[:10] }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Last Updated:</strong> {{ medicine.updated_at[:10] }}</p>
+                            <p><strong>Medicine ID:</strong> <code>{{ medicine.medicine_id }}</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

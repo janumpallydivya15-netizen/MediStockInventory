@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid main-content">
+    <div class="page-title">
+        <i class="bi bi-exclamation-triangle"></i>
+        Alerts & Notifications
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Low Stock Alerts</h6>
+                            <h2 class="fw-bold mb-0 text-warning">{{ low_stock|length }}</h2>
+                        </div>
+                        <i class="bi bi-exclamation-octagon text-warning" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Expiring Soon</h6>
+                            <h2 class="fw-bold mb-0 text-danger">{{ expiring_soon|length }}</h2>
+                        </div>
+                        <i class="bi bi-calendar-x text-danger" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Items -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <i class="bi bi-exclamation-triangle"></i> Low Stock Items
+        </div>
+        <div class="card-body">
+            {% if low_stock %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Category</th>
+                                <th>Current Stock</th>
+                                <th>Threshold</th>
+                                <th>Shortage</th>
+                                <th>Unit Price</th>
+                                <th>Action Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ item.manufacturer }}</small>
+                                </td>
+                                <td><span class="badge bg-info">{{ item.category }}</span></td>
+                                <td>
+                                    <strong class="text-danger">{{ item.quantity }} {{ item.unit }}</strong>
+                                </td>
+                                <td>{{ item.threshold }} {{ item.unit }}</td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        {{ item.threshold - item.quantity }} {{ item.unit }}
+                                    </span>
+                                </td>
+                                <td>₹{{ item.unit_price }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_medicine', medicine_id=item.medicine_id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-plus-circle"></i> Restock
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">All Good!</h4>
+                    <p class="text-muted">No low stock items at the moment.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Expiring Soon Items -->
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <i class="bi bi-calendar-x"></i> Medicines Expiring Soon (Within 30 Days)
+        </div>
+        <div class="card-body">
+            {% if expiring_soon %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th>Category</th>
+                                <th>Batch Number</th>
+                                <th>Expiration Date</th>
+                                <th>Days Remaining</th>
+                                <th>Current Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in expiring_soon %}
+                            {% set exp_date = item.expiration_date %}
+                            {% set days_left = ((exp_date | string)[:10] | string) %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ item.manufacturer }}</small>
+                                </td>
+                                <td><span class="badge bg-info">{{ item.category }}</span></td>
+                                <td><code>{{ item.batch_number }}</code></td>
+                                <td>
+                                    <strong class="text-danger">{{ exp_date }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">Expiring Soon</span>
+                                </td>
+                                <td>{{ item.quantity }} {{ item.unit }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_medicine', medicine_id=item.medicine_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">No Expiring Items</h4>
+                    <p class="text-muted">All medicines have sufficient shelf life.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Alert Info -->
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>Alert System:</strong> 
+        Email notifications are automatically sent when medicines fall below threshold levels. 
+        Check your email regularly for critical alerts.
+    </div>
+</div>
+{% endblock %}

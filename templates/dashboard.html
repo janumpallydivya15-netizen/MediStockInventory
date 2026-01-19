@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid main-content">
+    <div class="page-title">
+        <i class="bi bi-speedometer2"></i>
+        Dashboard Overview
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 opacity-75">Total Medicines</p>
+                        <h2 class="fw-bold mb-0">{{ stats.total_medicines }}</h2>
+                    </div>
+                    <i class="bi bi-box-seam" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 opacity-75">Total Value</p>
+                        <h2 class="fw-bold mb-0">₹{{ stats.total_value }}</h2>
+                    </div>
+                    <i class="bi bi-currency-rupee" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 opacity-75">Low Stock Items</p>
+                        <h2 class="fw-bold mb-0">{{ stats.low_stock }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="stat-card danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1 opacity-75">Expired Items</p>
+                        <h2 class="fw-bold mb-0">{{ stats.expired }}</h2>
+                    </div>
+                    <i class="bi bi-calendar-x" style="font-size: 3rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-lightning-charge"></i> Quick Actions
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('add_medicine') }}" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-circle"></i> Add Medicine
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('medicines') }}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-list-ul"></i> View All Medicines
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('alerts') }}" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-bell"></i> View Alerts
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('reports') }}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-graph-up"></i> View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alerts -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-exclamation-octagon"></i> Low Stock Alerts</span>
+                    <a href="{{ url_for('alerts') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if low_stock_items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Category</th>
+                                        <th>Current Stock</th>
+                                        <th>Threshold</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in low_stock_items %}
+                                    <tr>
+                                        <td><strong>{{ item.name }}</strong></td>
+                                        <td><span class="badge bg-secondary">{{ item.category }}</span></td>
+                                        <td><strong class="text-danger">{{ item.quantity }} {{ item.unit }}</strong></td>
+                                        <td>{{ item.threshold }} {{ item.unit }}</td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle"></i> Critical
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                            <p class="mt-3 text-muted">No low stock items. All medicines are adequately stocked!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
