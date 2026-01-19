@@ -203,7 +203,214 @@ def send_low_stock_alert(name, qty, threshold):
         Subject='MediStock Low Stock Alert',
         Message=f'{name} is low on stock ({qty}/{threshold})'
     )
+# Route: Edit Medicine
+@app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
+@login_required
+def edit_medicine(medicine_id):
+    if request.method == 'POST':
+        try:
+            old_quantity = int(request.form.get('old_quantity', 0))
+            new_quantity = int(request.form.get('quantity'))
+            threshold = int(request.form.get('threshold'))
+            
+            medicines_table.update_item(
+                Key={'medicine_id': medicine_id},
+                UpdateExpression='SET #name=:name, category=:category, quantity=:quantity, unit=:unit, threshold=:threshold, batch_number=:batch, expiration_date=:exp, unit_price=:price, manufacturer=:mfr, description=:desc, updated_at=:updated',
+                ExpressionAttributeNames={'#name': 'name'},
+                ExpressionAttributeValues={
+                    ':name': request.form.get('name'),
+                    ':category': request.form.get('category'),
+                    ':quantity': new_quantity,
+                    ':unit': request.form.get('unit'),
+                    ':threshold': threshold,
+                    ':batch': request.form.get('batch_number'),
+                    ':exp': request.form.get('expiration_date'),
+                    ':price': float_to_decimal(float(request.form.get('unit_price', 0))),
+                    ':mfr': request.form.get('manufacturer'),
+                    ':desc': request.form.get('description', ''),
+                    ':updated': datetime.now().isoformat()
+                }
+            )
+            
+            # Check if stock falls below threshold
+            if new_quantity <= threshold and old_quantity > threshold:
+                send_low_stock_alert(request.form.get('name'), new_quantity, threshold)
+            
+            flash('Medicine updated successfully!', 'success')
+            return redirect(url_for('medicines'))
+            
+        except Exception as e:
+            flash(f'Error updating medicine: {str(e)}', 'danger')
+            return redirect(url_for('edit_medicine', medicine_id=medicine_id))
+    
+    try:
+        response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+        medicine = response.get('Item')
+        
+        if not medicine:
+            flash('Medicine not found!', 'danger')
+            return redirect(url_for('medicines'))
+        
+        return render_template('edit_medicine.html', medicine=medicine)
+    except Exception as e:
+        flash(f'Error loading medicine: {str(e)}', 'danger')
+        return redirect(url_for('medicines'))
 
+# Route: Delete Medicine
+@app.route('/medicines/delete/<medicine_id>', methods=['POST'])
+@login_required
+def delete_medicine(medicine_id):
+    try:
+        response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+        medicine = response.get('Item')
+        
+        if medicine:
+            medicines_table.delete_item(Key={'medicine_id': medicine_id})
+            flash(f'Medicine "{medicine["name"]}" deleted successfully!', 'success')
+        else:
+            flash('Medicine not found!', 'danger')
+            
+    except Exception as e:
+        flash(f'Error deleting medicine: {str(e)}', 'danger')
+    
+    return redirect(url_for('medicines'))
+
+# Route: Low Stock Alert Page
+@app.route('/alerts')
+@login_required
+def alerts():
+    try:
+        response = medicines_table.scan()
+        all_medicines = response['Items']
+        
+        # Filter low stock items
+        low_stock_medicines = [
+            m for m in all_medicines 
+            if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
+        ]
+        
+        # Filter expiring soon (within 30 days)
+        expiring_soon = [
+            m for m in all_medicines
+            if datetime.fromisoformat(m.get('expiration_date', '9999-12-31')) < datetime.now() + timedelta(days=30)
+            and datetime.fromisoformat(m.get('expiration_date', '9999-12-31')) >= datetime.now()
+        ]
+        
+        return render_template('alerts.html', 
+                             low_stock=low_stock_medicines,
+                             expiring_soon=expiring_soon)
+    except Exception as e:
+        flash(f'Error loading alerts: {str(e)}', 'danger')
+        return render_template('alerts.html', low_stock=[], expiring_soon=[])
+
+# Route: Update Stock (Quick Update)
+@app.route('/medicines/update-stock/<medicine_id>', methods=['POST'])
+@login_required
+def update_stock(medicine_id):
+    try:
+        quantity_change = int(request.form.get('quantity_change', 0))
+        action = request.form.get('action')  # 'add' or 'remove'
+        
+        # Get current medicine data
+        response = medicines_table.get_item(Key={'medicine_id': medicine_id})
+        medicine = response.get('Item')
+        
+        if not medicine:
+            return jsonify({'success': False, 'message': 'Medicine not found'})
+        
+        current_quantity = int(medicine['quantity'])
+        threshold = int(medicine['threshold'])
+        
+        # Calculate new quantity
+        if action == 'add':
+            new_quantity = current_quantity + quantity_change
+        else:
+            new_quantity = max(0, current_quantity - quantity_change)
+        
+        # Update quantity
+        medicines_table.update_item(
+            Key={'medicine_id': medicine_id},
+            UpdateExpression='SET quantity=:quantity, updated_at=:updated',
+            ExpressionAttributeValues={
+                ':quantity': new_quantity,
+                ':updated': datetime.now().isoformat()
+            }
+        )
+        
+        # Send alert if stock falls below threshold
+        if new_quantity <= threshold and current_quantity > threshold:
+            send_low_stock_alert(medicine['name'], new_quantity, threshold)
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Stock updated successfully',
+            'new_quantity': new_quantity
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# Function to send low stock alert via SNS
+def send_low_stock_alert(medicine_name, current_stock, threshold):
+    try:
+        if SNS_TOPIC_ARN:
+            message = f"""
+MEDISTOCK ALERT: Low Stock Warning
+
+Medicine: {medicine_name}
+Current Stock: {current_stock}
+Threshold: {threshold}
+Status: CRITICAL - Immediate restocking required
+
+Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Please take immediate action to replenish this medicine.
+            """
+            
+            sns_client.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Subject=f'MediStock Alert: Low Stock - {medicine_name}',
+                Message=message
+            )
+    except Exception as e:
+        print(f'Error sending SNS alert: {str(e)}')
+
+# Route: Reports
+@app.route('/reports')
+@login_required
+def reports():
+    try:
+        response = medicines_table.scan()
+        medicines = response['Items']
+        
+        # Category-wise distribution
+        category_stats = {}
+        for med in medicines:
+            cat = med.get('category', 'Uncategorized')
+            if cat not in category_stats:
+                category_stats[cat] = {'count': 0, 'total_value': 0}
+            category_stats[cat]['count'] += 1
+            category_stats[cat]['total_value'] += float(med.get('quantity', 0)) * float(med.get('unit_price', 0))
+        
+        return render_template('reports.html', 
+                             medicines=medicines,
+                             category_stats=category_stats)
+    except Exception as e:
+        flash(f'Error generating reports: {str(e)}', 'danger')
+        return render_template('reports.html', medicines=[], category_stats={})
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template('500.html'), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
