@@ -206,42 +206,43 @@ def send_low_stock_alert(name, qty, threshold):
         Message=f'{name} is low on stock ({qty}/{threshold})'
     )
 # Route: Edit Medicine
-@app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
-@login_required
-def edit_medicine(medicine_id):
-
-    if request.method == 'POST':
-        medicines_table.update_item(
-            Key={'medicine_id': medicine_id},
-            UpdateExpression=(
-                "SET #n = :name, "
-                "#c = :category, "
-                "quantity = :quantity, "
-                "threshold = :threshold, "
-                "expiration_date = :expiration_date"
-            ),
-            ExpressionAttributeNames={
-                '#n': 'name',
-                '#c': 'category'
-            },
-            ExpressionAttributeValues={
-                ':name': request.form['name'],
-                ':category': request.form['category'],
-                ':quantity': int(request.form['quantity']),
-                ':threshold': int(request.form['threshold']),
-                ':expiration_date': request.form['expiration_date']
-            }
-        )
-
-        flash('Medicine updated successfully', 'success')
-        return redirect(url_for('medicines'))
-
-    response = medicines_table.get_item(
-        Key={'medicine_id': medicine_id}
-    )
-    medicine = response.get('Item')
-
-    return render_template('edit_medicine.html', medicine=medicine)
+medicines_table.update_item(
+    Key={'medicine_id': medicine_id},
+    UpdateExpression="""
+        SET 
+            #name = :name,
+            #category = :category,
+            #quantity = :quantity,
+            #unit = :unit,
+            #threshold = :threshold,
+            batch_number = :batch,
+            expiration_date = :exp,
+            unit_price = :price,
+            manufacturer = :mfr,
+            description = :desc,
+            updated_at = :updated
+    """,
+    ExpressionAttributeNames={
+        '#name': 'name',
+        '#category': 'category',
+        '#quantity': 'quantity',
+        '#unit': 'unit',
+        '#threshold': 'threshold'
+    },
+    ExpressionAttributeValues={
+        ':name': request.form.get('name'),
+        ':category': request.form.get('category'),
+        ':quantity': new_quantity,
+        ':unit': request.form.get('unit'),
+        ':threshold': threshold,
+        ':batch': request.form.get('batch_number'),
+        ':exp': request.form.get('expiration_date'),
+        ':price': float_to_decimal(float(request.form.get('unit_price', 0))),
+        ':mfr': request.form.get('manufacturer'),
+        ':desc': request.form.get('description', ''),
+        ':updated': datetime.now().isoformat()
+    }
+)
 
 # Route: Delete Medicine
 @app.route('/medicines/delete/<medicine_id>', methods=['POST'])
@@ -400,6 +401,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
