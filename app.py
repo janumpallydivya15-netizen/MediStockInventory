@@ -206,7 +206,9 @@ def send_low_stock_alert(name, qty, threshold):
         Message=f'{name} is low on stock ({qty}/{threshold})'
     )
 # Route: Edit Medicine
-medicines_table.update_item(
+@app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
+@login_required
+def edit_medicine(medicine_id):
     Key={'medicine_id': medicine_id},
     UpdateExpression="""
         SET 
@@ -215,12 +217,12 @@ medicines_table.update_item(
             #quantity = :quantity,
             #unit = :unit,
             #threshold = :threshold,
-            batch_number = :batch,
-            expiration_date = :exp,
-            unit_price = :price,
-            manufacturer = :mfr,
-            description = :desc,
-            updated_at = :updated
+            #batch_number = :batch,
+            #expiration_date = :exp,
+            #unit_price = :price,
+            #manufacturer = :mfr,
+            #description = :desc,
+            #updated_at = :updated
     """,
     ExpressionAttributeNames={
         '#name': 'name',
@@ -401,6 +403,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
