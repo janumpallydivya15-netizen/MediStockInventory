@@ -295,7 +295,7 @@ def edit_medicine(medicine_id):
     return render_template('edit_medicine.html', medicine=medicine)
 
             # Low stock alert
-            if new_quantity <= threshold and old_quantity > threshold
+            if new_quantity <= threshold and old_quantity > threshold:
                 send_low_stock_alert(
                     request.form.get('name'),
                     new_quantity,
@@ -476,6 +476,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
