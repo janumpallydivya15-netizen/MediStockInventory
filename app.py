@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 import os
 from functools import wraps
 import uuid
-
+print("AWS_REGION =", AWS_REGION)
+print("USERS TABLE =", DYNAMODB_TABLE_USERS)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
@@ -417,6 +418,7 @@ def server_error(e):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
