@@ -38,14 +38,16 @@ def login_required(f):
 
 
 def send_low_stock_alert(medicine_name, current_stock, threshold):
-    if not SNS_TOPIC_ARN:
-        print("SNS_TOPIC_ARN missing")
-        return
+    print("🚨 send_low_stock_alert CALLED")
+    print("Medicine:", medicine_name)
+    print("Current stock:", current_stock)
+    print("Threshold:", threshold)
+    print("SNS_TOPIC_ARN:", SNS_TOPIC_ARN)
 
     try:
         response = sns_client.publish(
             TopicArn=SNS_TOPIC_ARN,
-            Subject=f"MediStock Alert: Low Stock - {medicine_name}",
+            Subject=f"LOW STOCK: {medicine_name}",
             Message=f"""
 LOW STOCK ALERT
 
@@ -55,10 +57,10 @@ Threshold: {threshold}
 Time: {datetime.now()}
 """
         )
-        print("SNS sent:", response)
+        print("✅ SNS RESPONSE:", response)
 
     except Exception as e:
-        print("SNS ERROR:", str(e))
+        print("❌ SNS ERROR:", e)
 
 
 # ================= ROUTES =================
@@ -234,6 +236,7 @@ def test_sns():
 # ================= MAIN =================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
