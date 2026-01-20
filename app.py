@@ -226,17 +226,13 @@ def alerts():
                            expiring_soon=expiring_soon)
 
 
-# ================= SNS TEST =================
 @app.route('/test-sns')
 def test_sns():
     send_low_stock_alert("TEST MEDICINE", 2, 10)
     return "SNS test sent"
 
-
-# ================= MAIN =================
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-
+    app.run(host='0.0.0.0', port=5000)
 
 
 
