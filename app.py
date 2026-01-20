@@ -262,8 +262,6 @@ def edit_medicine(medicine_id):
         return redirect(url_for('medicines'))
 
     return render_template('edit_medicine.html', medicine=medicine)
-          
-
 # Route: Delete Medicine
 @app.route('/medicines/delete/<medicine_id>', methods=['POST'])
 @login_required
@@ -343,12 +341,7 @@ def update_stock(medicine_id):
                 ':quantity': new_quantity,
                 ':updated': datetime.now().isoformat()
             }
-        )
-        
-        # Send alert if stock falls below threshold
-        if new_quantity <= threshold:
-    send_low_stock_alert(medicine['name'], new_quantity, threshold)
-
+        ) 
         return jsonify({
             'success': True, 
             'message': 'Stock updated successfully',
@@ -423,6 +416,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
