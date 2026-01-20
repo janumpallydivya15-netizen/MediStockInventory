@@ -418,6 +418,13 @@ def server_error(e):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+    
+@app.route('/test-sns')
+def test_sns():
+    send_low_stock_alert("Paracetamol Test", 2, 10)
+    return "SNS test sent"
+
+
 
 
 
