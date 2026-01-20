@@ -287,29 +287,7 @@ def edit_medicine(medicine_id):
     return render_template('edit_medicine.html', medicine=medicine)
 
             # Low stock alert
-            if new_quantity <= threshold and old_quantity > threshold:
-                send_low_stock_alert(
-                    request.form.get('name'),
-                    new_quantity,
-                    threshold
-                )
-
-            flash('Medicine updated successfully!', 'success')
-            return redirect(url_for('medicines'))
-
-        except Exception as e:
-            flash(f'Error updating medicine: {str(e)}', 'danger')
-            return redirect(url_for('edit_medicine', medicine_id=medicine_id))
-
-    # GET request
-    response = medicines_table.get_item(Key={'medicine_id': medicine_id})
-    medicine = response.get('Item')
-
-    if not medicine:
-        flash('Medicine not found!', 'danger')
-        return redirect(url_for('medicines'))
-
-    return render_template('edit_medicine.html', medicine=medicine)
+          
 
 # Route: Delete Medicine
 @app.route('/medicines/delete/<medicine_id>', methods=['POST'])
@@ -468,6 +446,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
