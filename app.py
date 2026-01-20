@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import uuid
 import os
+from decimal import Decimal
 
 # ================= APP =================
 app = Flask(__name__)
@@ -38,16 +39,10 @@ def login_required(f):
 
 
 def send_low_stock_alert(medicine_name, current_stock, threshold):
-    print("🚨 send_low_stock_alert CALLED")
-    print("Medicine:", medicine_name)
-    print("Current stock:", current_stock)
-    print("Threshold:", threshold)
-    print("SNS_TOPIC_ARN:", SNS_TOPIC_ARN)
-
     try:
-        response = sns_client.publish(
+        sns_client.publish(
             TopicArn=SNS_TOPIC_ARN,
-            Subject=f"LOW STOCK: {medicine_name}",
+            Subject=f"LOW STOCK ALERT: {medicine_name}",
             Message=f"""
 LOW STOCK ALERT
 
@@ -57,7 +52,7 @@ Threshold: {threshold}
 Time: {datetime.now()}
 """
         )
-        print("✅ SNS RESPONSE:", response)
+        print("✅ SNS alert sent")
 
     except Exception as e:
         print("❌ SNS ERROR:", e)
@@ -73,20 +68,18 @@ def index():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username']
         email = request.form['email']
-        password = request.form['password']
 
-        response = users_table.scan(FilterExpression=Attr('email').eq(email))
-        if response.get('Items'):
+        existing = users_table.scan(FilterExpression=Attr('email').eq(email))
+        if existing.get('Items'):
             flash('Email already registered', 'danger')
             return redirect(url_for('signup'))
 
         users_table.put_item(Item={
             'user_id': str(uuid.uuid4()),
-            'username': username,
+            'username': request.form['username'],
             'email': email,
-            'password': generate_password_hash(password),
+            'password': generate_password_hash(request.form['password']),
             'created_at': datetime.now().isoformat()
         })
 
@@ -112,6 +105,7 @@ def login():
 
         session['user_id'] = users[0]['user_id']
         session['username'] = users[0]['username']
+
         flash('Login successful', 'success')
         return redirect(url_for('dashboard'))
 
@@ -128,11 +122,18 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    medicines = get_all_medicines()  # however you fetch medicines
+    response = medicines_table.scan()
+    medicines = response.get('Items', [])
 
     total_medicines = len(medicines)
-    low_stock = sum(1 for m in medicines if m.get("quantity", 0) <= 10)
-    out_of_stock = sum(1 for m in medicines if m.get("quantity", 0) == 0)
+    low_stock = sum(
+        1 for m in medicines
+        if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
+    )
+    out_of_stock = sum(
+        1 for m in medicines
+        if int(m.get('quantity', 0)) == 0
+    )
 
     stats = {
         "total_medicines": total_medicines,
@@ -145,7 +146,6 @@ def dashboard():
         medicines=medicines,
         stats=stats
     )
-
 
 
 # ================= MEDICINES =================
@@ -210,27 +210,29 @@ def edit_medicine(medicine_id):
     return render_template('edit_medicine.html', medicine=medicine)
 
 
-# ================= ALERTS PAGE =================
+# ================= ALERTS =================
 @app.route('/alerts')
 @login_required
 def alerts():
     response = medicines_table.scan()
-    all_medicines = response.get('Items', [])
+    medicines = response.get('Items', [])
 
     low_stock = [
-        m for m in all_medicines
+        m for m in medicines
         if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
     ]
 
     expiring_soon = [
-        m for m in all_medicines
-        if datetime.fromisoformat(m.get('expiration_date', '9999-12-31'))
+        m for m in medicines
+        if datetime.fromisoformat(m.get('expiration_date'))
         < datetime.now() + timedelta(days=30)
     ]
 
-    return render_template('alerts.html',
-                           low_stock=low_stock,
-                           expiring_soon=expiring_soon)
+    return render_template(
+        'alerts.html',
+        low_stock=low_stock,
+        expiring_soon=expiring_soon
+    )
 
 
 @app.route('/test-sns')
@@ -238,21 +240,6 @@ def test_sns():
     send_low_stock_alert("TEST MEDICINE", 2, 10)
     return "SNS test sent"
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    app.run(host='0.0.0.0', port=5000, debug=True)
