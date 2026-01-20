@@ -286,26 +286,34 @@ def alerts():
     try:
         response = medicines_table.scan()
         all_medicines = response['Items']
-        
+
         # Filter low stock items
         low_stock_medicines = [
-            m for m in all_medicines 
+            m for m in all_medicines
             if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
         ]
-        
+
         # Filter expiring soon (within 30 days)
         expiring_soon = [
             m for m in all_medicines
             if datetime.fromisoformat(m.get('expiration_date', '9999-12-31')) < datetime.now() + timedelta(days=30)
             and datetime.fromisoformat(m.get('expiration_date', '9999-12-31')) >= datetime.now()
         ]
-        
-        return render_template('alerts.html', 
-                             low_stock=low_stock_medicines,
-                             expiring_soon=expiring_soon)
+
+        return render_template(
+            'alerts.html',
+            low_stock=low_stock_medicines,
+            expiring_soon=expiring_soon
+        )
+
     except Exception as e:
         flash(f'Error loading alerts: {str(e)}', 'danger')
-        return render_template('alerts.html', low_stock=[], expiring_soon=[])
+        return render_template(
+            'alerts.html',
+            low_stock=[],
+            expiring_soon=[]
+        )
+
 
 # Route: Update Stock (Quick Update)
 @app.route('/medicines/update-stock/<medicine_id>', methods=['POST'])
@@ -414,6 +422,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
