@@ -17,7 +17,7 @@ DYNAMODB_TABLE_MEDICINES = os.environ.get('DYNAMODB_TABLE_MEDICINES', 'MediStock
 DYNAMODB_TABLE_USERS = os.environ.get('DYNAMODB_TABLE_USERS', 'MediStock_Users')
 SNS_TOPIC_ARN = "arn:aws:sns:ap-south-1:120121146931:MediStockAlertsNew"
 
-print("AWS_REGION = ap-south-1")
+print("AWS_REGION =", AWS_REGION)
 print("USERS TABLE =", DYNAMODB_TABLE_USERS)
 
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -233,6 +233,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
