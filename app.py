@@ -204,7 +204,6 @@ from decimal import Decimal
 def edit_medicine(medicine_id):
     if request.method == 'POST':
         try:
-            # Fetch current item FIRST
             response = medicines_table.get_item(Key={'medicine_id': medicine_id})
             medicine = response.get('Item')
 
@@ -219,55 +218,31 @@ def edit_medicine(medicine_id):
             medicines_table.update_item(
                 Key={'medicine_id': medicine_id},
                 UpdateExpression="""
-                    SET
-                        #n = :n,
-                        #c = :c,
-                        #q = :q,
-                        #u = :u,
-                        #t = :t,
-                        #bn = :bn,
-                        #ed = :ed,
-                        #up = :up,
-                        #m = :m,
-                        #d = :d,
-                        #ua = :ua
+                    SET #n=:n, #c=:c, #q=:q, #t=:t, #ua=:ua
                 """,
                 ExpressionAttributeNames={
                     '#n': 'name',
                     '#c': 'category',
                     '#q': 'quantity',
-                    '#u': 'unit',
                     '#t': 'threshold',
-                    '#bn': 'batch_number',
-                    '#ed': 'expiration_date',
-                    '#up': 'unit_price',
-                    '#m': 'manufacturer',
-                    '#d': 'description',
                     '#ua': 'updated_at'
                 },
                 ExpressionAttributeValues={
                     ':n': request.form.get('name'),
                     ':c': request.form.get('category'),
-                    ':q': Decimal(str(new_quantity)),
-                    ':u': request.form.get('unit'),
-                    ':t': Decimal(str(threshold)),
-                    ':bn': request.form.get('batch_number'),
-                    ':ed': request.form.get('expiration_date'),
-                    ':up': Decimal(str(request.form.get('unit_price'))),
-                    ':m': request.form.get('manufacturer'),
-                    ':d': request.form.get('description', ''),
+                    ':q': new_quantity,
+                    ':t': threshold,
                     ':ua': datetime.now().isoformat()
                 }
             )
 
-            # Low stock alert
-           if new_quantity <= threshold:
-    send_low_stock_alert(
-        request.form.get('name'),
-        new_quantity,
-        threshold
-    )
-
+            # 🔔 Low stock alert
+            if new_quantity <= threshold:
+                send_low_stock_alert(
+                    request.form.get('name'),
+                    new_quantity,
+                    threshold
+                )
 
             flash('Medicine updated successfully!', 'success')
             return redirect(url_for('medicines'))
@@ -276,7 +251,7 @@ def edit_medicine(medicine_id):
             flash(f'Error updating medicine: {str(e)}', 'danger')
             return redirect(url_for('edit_medicine', medicine_id=medicine_id))
 
-    # GET
+    # GET request
     response = medicines_table.get_item(Key={'medicine_id': medicine_id})
     medicine = response.get('Item')
 
@@ -442,10 +417,9 @@ def server_error(e):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True
-# ================= MAIN =================
-if __name__ == '__main__':
-    app
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
+
 
 
 
