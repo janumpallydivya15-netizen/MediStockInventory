@@ -128,17 +128,24 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    response = medicines_table.scan()
-    medicines = response.get('Items', [])
+    medicines = get_all_medicines()  # however you fetch medicines
 
-    low_stock = [
-        m for m in medicines
-        if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
-    ]
+    total_medicines = len(medicines)
+    low_stock = sum(1 for m in medicines if m.get("quantity", 0) <= 10)
+    out_of_stock = sum(1 for m in medicines if m.get("quantity", 0) == 0)
 
-    return render_template('dashboard.html',
-                           total=len(medicines),
-                           low_stock=len(low_stock))
+    stats = {
+        "total_medicines": total_medicines,
+        "low_stock": low_stock,
+        "out_of_stock": out_of_stock
+    }
+
+    return render_template(
+        "dashboard.html",
+        medicines=medicines,
+        stats=stats
+    )
+
 
 
 # ================= MEDICINES =================
@@ -233,6 +240,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
