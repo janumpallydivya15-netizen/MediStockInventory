@@ -196,14 +196,6 @@ def add_medicine():
     return render_template('add_medicine.html')
 
 # ================= ALERTS =================
-def send_low_stock_alert(name, qty, threshold):
-    if not SNS_TOPIC_ARN:
-        return
-    sns_client.publish(
-        TopicArn=SNS_TOPIC_ARN,
-        Subject='MediStock Low Stock Alert',
-        Message=f'{name} is low on stock ({qty}/{threshold})'
-    )
 # Route: Edit Medicine
 from decimal import Decimal
 
@@ -269,12 +261,13 @@ def edit_medicine(medicine_id):
             )
 
             # Low stock alert
-            if new_quantity <= threshold and old_quantity > threshold:
-                send_low_stock_alert(
-                    request.form.get('name'),
-                    new_quantity,
-                    threshold
-                )
+           if new_quantity <= threshold:
+    send_low_stock_alert(
+        request.form.get('name'),
+        new_quantity,
+        threshold
+    )
+
 
             flash('Medicine updated successfully!', 'success')
             return redirect(url_for('medicines'))
@@ -414,28 +407,28 @@ def update_stock(medicine_id):
 
 # Function to send low stock alert via SNS
 def send_low_stock_alert(medicine_name, current_stock, threshold):
+    if not SNS_TOPIC_ARN:
+        print("SNS_TOPIC_ARN is missing")
+        return
+
     try:
-        if SNS_TOPIC_ARN:
-            message = f"""
-MEDISTOCK ALERT: Low Stock Warning
+        response = sns_client.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject=f'MediStock Alert: Low Stock - {medicine_name}',
+            Message=f"""
+LOW STOCK ALERT
 
 Medicine: {medicine_name}
 Current Stock: {current_stock}
 Threshold: {threshold}
-Status: CRITICAL - Immediate restocking required
+Time: {datetime.now()}
+"""
+        )
+        print("SNS publish success:", response)
 
-Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Please take immediate action to replenish this medicine.
-            """
-            
-            sns_client.publish(
-                TopicArn=SNS_TOPIC_ARN,
-                Subject=f'MediStock Alert: Low Stock - {medicine_name}',
-                Message=message
-            )
     except Exception as e:
-        print(f'Error sending SNS alert: {str(e)}')
+        print("SNS publish FAILED:", str(e))
+
 
 # Route: Reports
 @app.route('/reports')
@@ -475,6 +468,7 @@ if __name__ == '__main__':
 # ================= MAIN =================
 if __name__ == '__main__':
     app
+
 
 
 
