@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 import os
 from functools import wraps
 import uuid
-print("AWS_REGION =", AWS_REGION)
-print("USERS TABLE =", DYNAMODB_TABLE_USERS)
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
@@ -17,6 +16,9 @@ app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-product
 AWS_REGION = os.environ.get('AWS_REGION', 'ap-south-1')
 DYNAMODB_TABLE_MEDICINES = os.environ.get('DYNAMODB_TABLE_MEDICINES', 'MediStock_Medicines')
 DYNAMODB_TABLE_USERS = os.environ.get('DYNAMODB_TABLE_USERS', 'MediStock_Users')
+print("AWS_REGION =", AWS_REGION)
+print("USERS TABLE =", DYNAMODB_TABLE_USERS)
+
 SNS_TOPIC_ARN = "arn:aws:sns:ap-south-1:120121146931:MediStockAlertsNew"
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 sns_client = boto3.client('sns', region_name=AWS_REGION)
@@ -260,8 +262,6 @@ def edit_medicine(medicine_id):
         return redirect(url_for('medicines'))
 
     return render_template('edit_medicine.html', medicine=medicine)
-
-            # Low stock alert
           
 
 # Route: Delete Medicine
@@ -346,9 +346,9 @@ def update_stock(medicine_id):
         )
         
         # Send alert if stock falls below threshold
-        if new_quantity <= threshold and current_quantity > threshold:
-            send_low_stock_alert(medicine['name'], new_quantity, threshold)
-        
+        if new_quantity <= threshold:
+    send_low_stock_alert(medicine['name'], new_quantity, threshold)
+
         return jsonify({
             'success': True, 
             'message': 'Stock updated successfully',
@@ -416,13 +416,15 @@ def not_found(e):
 def server_error(e):
     return render_template('500.html'), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
-    
 @app.route('/test-sns')
 def test_sns():
     send_low_stock_alert("Paracetamol Test", 2, 10)
     return "SNS test sent"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
+
 
 
 
