@@ -208,6 +208,7 @@ if request.method == 'POST':
 
     return redirect(url_for('medicines'))
 
+
 # ================= ALERTS =================
 def send_low_stock_alert(medicine_name, current_stock, threshold):
     print("🚨 LOW STOCK FUNCTION CALLED")
@@ -242,6 +243,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
