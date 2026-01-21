@@ -2,12 +2,8 @@
 
 {% block content %}
 <div class="container-fluid main-content">
-    <div class="page-title mb-4">
-        <i class="bi bi-bar-chart-line"></i>
-        Inventory Reports
-    </div>
+    <h3 class="mb-4">Inventory Reports</h3>
 
-    <!-- Summary Cards -->
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card text-center">
@@ -37,49 +33,35 @@
         </div>
     </div>
 
-    <!-- Medicines Table -->
     <div class="card">
-        <div class="card-header">
-            <i class="bi bi-list-ul"></i> Medicine Details
-        </div>
-
+        <div class="card-header">Medicines</div>
         <div class="card-body p-0">
             {% if medicines %}
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Quantity</th>
-                            <th>Threshold</th>
-                            <th>Expiry Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for medicine in medicines %}
-                        <tr>
-                            <td>{{ medicine.name }}</td>
-                            <td>{{ medicine.category }}</td>
-                            <td>{{ medicine.quantity }}</td>
-                            <td>{{ medicine.threshold }}</td>
-                            <td>{{ medicine.expiry_date }}</td>
-                            <td>
-                                {% if medicine.quantity <= medicine.threshold %}
-                                    <span class="badge bg-danger">Low Stock</span>
-                                {% else %}
-                                    <span class="badge bg-success">OK</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                        <th>Threshold</th>
+                        <th>Expiry Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for medicine in medicines %}
+                    <tr>
+                        <td>{{ medicine.name }}</td>
+                        <td>{{ medicine.category }}</td>
+                        <td>{{ medicine.quantity }}</td>
+                        <td>{{ medicine.threshold }}</td>
+                        <td>{{ medicine.expiry_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% else %}
-            <div class="text-center py-5 text-muted">
-                No medicine data available.
+            <div class="p-4 text-muted text-center">
+                No data available
             </div>
             {% endif %}
         </div>
