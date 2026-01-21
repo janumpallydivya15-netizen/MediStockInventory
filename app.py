@@ -606,42 +606,6 @@ def update_medicine(medicine_id):
         flash('An error occurred. Please try again.', 'danger')
         return redirect(url_for('medicines'))
 
-
-@app.route('/alerts')
-@login_required
-def alerts():
-    # Fetch medicines for logged-in user
-    response = medicines_table.scan(
-        FilterExpression=Attr('user_id').eq(session['user_id'])
-    )
-    medicines = response.get('Items', [])
-
-    # Low stock medicines
-    low_stock = [
-        m for m in medicines
-        if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
-    ]
-
-    # Expiring medicines (next 30 days)
-    expiring_soon = []
-    today = datetime.now()
-
-    for m in medicines:
-        if 'expiry_date' in m:
-            try:
-                expiry = datetime.strptime(m['expiry_date'], '%Y-%m-%d')
-                if 0 <= (expiry - today).days <= 30:
-                    expiring_soon.append(m)
-            except ValueError:
-                pass
-
-    return render_template(
-        'alerts.html',
-        low_stock=low_stock,
-        expiring_soon=expiring_soon,
-        is_logged_in=is_logged_in()
-    )
-
 # Delete Medicine Route
 @app.route('/medicines/delete/<medicine_id>', methods=['POST'])
 @login_required
@@ -840,4 +804,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
-
