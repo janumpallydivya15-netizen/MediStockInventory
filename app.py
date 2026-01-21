@@ -806,6 +806,33 @@ def alerts():
         is_logged_in=is_logged_in()
     )
 
+@app.route('/reports')
+@login_required
+def reports():
+    response = medicines_table.scan(
+        FilterExpression=Attr('user_id').eq(session['user_id'])
+    )
+    medicines = response.get('Items', [])
+
+    total_medicines = len(medicines)
+    low_stock = sum(
+        1 for m in medicines
+        if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
+    )
+    out_of_stock = sum(
+        1 for m in medicines
+        if int(m.get('quantity', 0)) == 0
+    )
+
+    return render_template(
+        'reports.html',
+        medicines=medicines,
+        total_medicines=total_medicines,
+        low_stock=low_stock,
+        out_of_stock=out_of_stock,
+        is_logged_in=is_logged_in()
+    )
+
 # Test SNS Route (for debugging - remove in production)
 @app.route('/test-sns')
 @login_required
@@ -836,4 +863,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
+
 
