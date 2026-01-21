@@ -211,28 +211,29 @@ def edit_medicine(medicine_id):
 
 
 # ================= ALERTS =================
-@app.route('/alerts')
-@login_required
-def alerts():
-    response = medicines_table.scan()
-    medicines = response.get('Items', [])
+def send_low_stock_alert(medicine_name, current_stock, threshold):
+    print("🚨 LOW STOCK FUNCTION CALLED")
+    print("Medicine:", medicine_name)
+    print("Stock:", current_stock, "Threshold:", threshold)
 
-    low_stock = [
-        m for m in medicines
-        if int(m.get('quantity', 0)) <= int(m.get('threshold', 0))
-    ]
+    try:
+        response = sns_client.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject=f"LOW STOCK ALERT: {medicine_name}",
+            Message=f"""
+LOW STOCK ALERT
 
-    expiring_soon = [
-        m for m in medicines
-        if datetime.fromisoformat(m.get('expiration_date'))
-        < datetime.now() + timedelta(days=30)
-    ]
+Medicine: {medicine_name}
+Current Stock: {current_stock}
+Threshold: {threshold}
+Time: {datetime.now()}
+"""
+        )
+        print("✅ SNS MESSAGE ID:", response['MessageId'])
 
-    return render_template(
-        'alerts.html',
-        low_stock=low_stock,
-        expiring_soon=expiring_soon
-    )
+    except Exception as e:
+        print("❌ SNS ERROR:", e)
+
 
 
 @app.route('/test-sns')
@@ -243,3 +244,4 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
