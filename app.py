@@ -178,21 +178,19 @@ def add_medicine():
 # ================= EDIT MEDICINE =================
 @app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
 @login_required
-def edit_medicine(medicine_id):
+def update_medicine(medicine_id):
     response = medicines_table.get_item(Key={'medicine_id': medicine_id})
     medicine = response.get('Item')
 
-    if not medicine:
-        flash('Medicine not found', 'danger')
-        return redirect(url_for('medicines'))
+if request.method == 'POST':
+    new_quantity = int(request.form['quantity'])
+    threshold = int(request.form['threshold'])
 
-    if request.method == 'POST':
-        new_quantity = int(request.form['quantity'])
-        threshold = int(request.form['threshold'])
-
+    try:
         medicines_table.update_item(
             Key={'medicine_id': medicine_id},
             UpdateExpression='SET quantity=:q, threshold=:t, updated_at=:u',
+            ConditionExpression='attribute_exists(medicine_id)',
             ExpressionAttributeValues={
                 ':q': new_quantity,
                 ':t': threshold,
@@ -200,14 +198,15 @@ def edit_medicine(medicine_id):
             }
         )
 
-       if int(new_quantity) <= int(threshold):
+        if new_quantity <= threshold:
             send_low_stock_alert(medicine['name'], new_quantity, threshold)
 
-        flash('Medicine updated', 'success')
-        return redirect(url_for('medicines'))
+        flash('Medicine updated successfully', 'success')
 
-    return render_template('edit_medicine.html', medicine=medicine)
+    except medicines_table.meta.client.exceptions.ConditionalCheckFailedException:
+        flash('Medicine not found. Update failed.', 'danger')
 
+    return redirect(url_for('medicines'))
 
 # ================= ALERTS =================
 def send_low_stock_alert(medicine_name, current_stock, threshold):
@@ -243,6 +242,7 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
