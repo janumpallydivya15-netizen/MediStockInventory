@@ -7,6 +7,7 @@
             <i class="bi bi-box-seam"></i>
             Medicines Inventory
         </div>
+
         <a href="{{ url_for('add_medicine') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Add New Medicine
         </a>
@@ -23,100 +24,99 @@
                 </div>
             </div>
         </div>
+
         <div class="card-body p-0">
             {% if medicines %}
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="medicinesTable">
-                        <thead>
-                            <tr>
-                                <th>Medicine Name</th>
-                                <th>Category</th>
-                                <th>Quantity</th>
-                                <th>Threshold</th>
-                                <th>Batch No.</th>
-                                <th>Expiry Date</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for medicine in medicines %}
-                            <tr>
-                                <td>
-                                    <strong>{{ medicine.name }}</strong>
-                                    <br>
-                                    <small class="text-muted">{{ medicine.manufacturer }}</small>
-                                </td>
-                                <td><span class="badge bg-info">{{ medicine.category }}</span></td>
-                                <td>
-                                    <strong class="{% if medicine.quantity <= medicine.threshold %}text-danger{% endif %}">
-                                        {{ medicine.quantity }} {{ medicine.unit }}
-                                    </strong>
-                                </td>
-                                <td>{{ medicine.threshold }} {{ medicine.unit }}</td>
-                                <td><code>{{ medicine.batch_number }}</code></td>
-                                <td>
-                                    {% set exp_date = medicine.expiration_date %}
-                                    {{ exp_date }}
-                                </td>
-                                <td>₹{{ medicine.unit_price }}</td>
-                                <td>
-                                    {% if medicine.quantity <= medicine.threshold %}
-                                        <span class="badge bg-danger">Low Stock</span>
-                                    {% else %}
-                                        <span class="badge bg-success">In Stock</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ url_for('edit_medicine', medicine_id=medicine.medicine_id) }}" 
-                                           class="btn btn-sm btn-outline-primary" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteMedicine('{{ medicine.medicine_id }}', '{{ medicine.name }}')" 
-                                                title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="medicinesTable">
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Threshold</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medicine in medicines %}
+                        <tr>
+                            <td><strong>{{ medicine.name }}</strong></td>
+
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ medicine.category }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <strong class="{% if medicine.quantity <= medicine.threshold %}text-danger{% endif %}">
+                                    {{ medicine.quantity }}
+                                </strong>
+                            </td>
+
+                            <td>{{ medicine.threshold }}</td>
+
+                            <td>{{ medicine.expiry_date }}</td>
+
+                            <td>
+                                {% if medicine.quantity <= medicine.threshold %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                {% else %}
+                                    <span class="badge bg-success">In Stock</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('edit_medicine', medicine_id=medicine.medicine_id) }}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="deleteMedicine('{{ medicine.medicine_id }}', '{{ medicine.name }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 5rem; color: #ccc;"></i>
-                    <h4 class="mt-3 text-muted">No medicines found</h4>
-                    <p class="text-muted">Start by adding your first medicine to the inventory.</p>
-                    <a href="{{ url_for('add_medicine') }}" class="btn btn-primary mt-3">
-                        <i class="bi bi-plus-circle"></i> Add Medicine
-                    </a>
-                </div>
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                <h4 class="mt-3 text-muted">No medicines found</h4>
+                <a href="{{ url_for('add_medicine') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Add Medicine
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Delete Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                <h5 class="modal-title">Confirm Delete</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete <strong id="medicineName"></strong>?</p>
-                <p class="text-muted mb-0">This action cannot be undone.</p>
+                Are you sure you want to delete <strong id="medicineName"></strong>?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="POST" style="display: inline;">
+                <form id="deleteForm" method="POST">
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Delete
+                        Delete
                     </button>
                 </form>
             </div>
@@ -127,21 +127,16 @@
 
 {% block extra_js %}
 <script>
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchValue = this.value.toLowerCase();
-        const tableRows = document.querySelectorAll('#medicinesTable tbody tr');
-        
-        tableRows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchValue) ? '' : 'none';
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const value = this.value.toLowerCase();
+        document.querySelectorAll('#medicinesTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
         });
     });
 
-    // Delete medicine function
-    function deleteMedicine(medicineId, medicineName) {
-        document.getElementById('medicineName').textContent = medicineName;
-        document.getElementById('deleteForm').action = `/medicines/delete/${medicineId}`;
+    function deleteMedicine(id, name) {
+        document.getElementById('medicineName').innerText = name;
+        document.getElementById('deleteForm').action = `/medicines/delete/${id}`;
         new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
 </script>
