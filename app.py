@@ -533,7 +533,7 @@ def add_medicine():
 # Edit Medicine Page
 @app.route('/medicines/edit/<medicine_id>', methods=['GET', 'POST'])
 @login_required
-def update_medicine(medicine_id):
+def edit_medicine(medicine_id):
     try:
         # Get medicine details from DynamoDB
         response = medicines_table.get_item(Key={'medicine_id': medicine_id})
@@ -863,5 +863,6 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
+
 
 
