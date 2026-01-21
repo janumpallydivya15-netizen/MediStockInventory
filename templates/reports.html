@@ -50,11 +50,11 @@
                 <tbody>
                     {% for medicine in medicines %}
                     <tr>
-                        <td>{{ medicine.name }}</td>
-                        <td>{{ medicine.category }}</td>
-                        <td>{{ medicine.quantity }}</td>
-                        <td>{{ medicine.threshold }}</td>
-                        <td>{{ medicine.expiry_date }}</td>
+                        <td>{{ medicine.get('name', 'N/A') }}</td>
+                        <td>{{ medicine.get('category', 'N/A') }}</td>
+                        <td>{{ medicine.get('quantity', 0) }}</td>
+                        <td>{{ medicine.get('threshold', 0) }}</td>
+                        <td>{{ medicine.get('expiry_date', 'N/A') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
