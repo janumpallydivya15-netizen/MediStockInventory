@@ -201,8 +201,7 @@ def edit_medicine(medicine_id):
             }
         )
 
-        if new_quantity <= threshold and new_quantity > 0:
-
+       if int(new_quantity) <= int(threshold):
             send_low_stock_alert(medicine['name'], new_quantity, threshold)
 
         flash('Medicine updated', 'success')
@@ -245,5 +244,6 @@ def test_sns():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
