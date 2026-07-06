@@ -61,12 +61,9 @@ users_table = dynamodb.Table(USERS_TABLE_NAME)
 # ---------------------------------------
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("medistock.log"),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------
